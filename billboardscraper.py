@@ -9,6 +9,7 @@ import spotipy.util as util
 from spotipy.oauth2 import SpotifyClientCredentials
 from datetime import timedelta
 import numpy
+import MySQLdb
 
 # It will be necessary to create a credentialfiles.py file, which has a class Credentials. This class should only contain
 #  ClientID, ClientSecret, RedirectURI, UserID, Username, and Scope. Refer to readme for more information, and spotipy documentation 
@@ -77,7 +78,7 @@ def scrape_billboard(date):
 def loop_back_through_data(NumWeeks):
 	global songList
 	for i in range(0, NumWeeks):
-		d = datetime.date(2017, 9, 30) - timedelta(days=7*i)
+		d = datetime.date(2018, 3, 17) - timedelta(days=7*i)
 		scrape_billboard(d)
 
 
@@ -108,15 +109,39 @@ def get_song_URI():
 
 def get_spotify_details():
 	global songList, sp
-	try:
-		for i in range(0, len(songList)):
-			if (songList[i].uri != 'N'):
-				AudioFeatures = sp.audio_features(songList[i].uri)
-				songList[i].audiofeatures = AudioFeatures[0]
-			else:
-				songList[i].audiofeatures = 'N'
-	except:
-		print('No URI')
+	for i in range(0, len(songList)):
+		if (songList[i].uri != 'N'):
+			AudioFeatures_Array = sp.audio_features(songList[i].uri)
+			AudioFeatures = AudioFeatures_Array[0]
+			songList[i].audiofeatures = AudioFeatures
+			songList[i].danceability = AudioFeatures['danceability']
+			songList[i].energy = AudioFeatures['energy']
+			songList[i].key = AudioFeatures['key']
+			songList[i].loudness = AudioFeatures['loudness']
+			songList[i].mode = AudioFeatures['mode']
+			songList[i].speechiness = AudioFeatures['speechiness']
+			songList[i].acousticness = AudioFeatures['acousticness']
+			songList[i].liveness = AudioFeatures['liveness']
+			songList[i].valence = AudioFeatures['valence']
+			songList[i].tempo = AudioFeatures['tempo']
+			songList[i].duration = AudioFeatures['duration_ms']
+			songList[i].time_signature = AudioFeatures['time_signature']
+			songList[i].analysis_url = AudioFeatures['analysis_url']
+		else:
+			songList[i].audiofeatures = 'N'
+			songList[i].danceability = 'N'
+			songList[i].energy = 'N'
+			songList[i].key = 'N'
+			songList[i].loudness = 'N'
+			songList[i].mode = 'N'
+			songList[i].speechiness = 'N'
+			songList[i].acousticness = 'N'
+			songList[i].liveness = 'N'
+			songList[i].valence = 'N'
+			songList[i].tempo = 'N'
+			songList[i].duration = 'N'
+			songList[i].time_signature = 'N'
+			songList[i].analysis_url = 'N'
 
 
 def initialize_spotify():
