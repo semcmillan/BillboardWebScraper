@@ -5,3 +5,7 @@ class Credentials:
 	UserID 			= '1224319843'
 	username		= 'semcmill'
 	scope 			= 'user-library-read'
+	sql_host 		= 'DESKTOP-EL7QNFT'
+	sql_user		= 'semcmillan'
+	sql_password	= 'RocketTest'
+	sql_db			= 'test'
