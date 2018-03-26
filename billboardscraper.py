@@ -8,7 +8,6 @@ import spotipy
 import spotipy.util as util
 from spotipy.oauth2 import SpotifyClientCredentials
 from datetime import timedelta
-import numpy
 import MySQLdb
 import time
 
@@ -21,6 +20,7 @@ songList = []
 sp = ''
 db = ''
 cursor = ''
+DelaySpotifySearch = 0.1
 
 # Class which is used to track song information, can additionally be used to print information about
 #  the class
@@ -93,51 +93,26 @@ def loop_back_through_data(NumWeeks):
 		time.sleep(5) #Add sleep here
 
 
-# Uses a simple url search to splice the uri of the track, on spotify. This will be used later to search through spotify. 
-#  Although not the most effecient way, this is a safe and easy way to bypass spotify's x requests a second, and can be done much faster,
-#  assuming a stable internet connection. If the song is not found to have an URI (if no links include spotify.com/track/), then an 
-#  'N' is inserted instead.
 def get_song_URI():
-	global songList
-	try:
-		for i in range(0, len(songList)):
-			time.sleep(0.3)
-			check = 1
-			url = "http://www.ask.com/web?q=spotify+" + str(songList[i].songtitle) + '+' + str(songList[i].artistname) 
-			url	= url.replace(" ", "+")
-			html = urllib.request.urlopen(url)
-			soup = BeautifulSoup(html, 'html.parser')
-			SearchResultURLS = soup.find_all('p', {'class':"PartialSearchResults-item-url"})
-			for url in SearchResultURLS:
-				if "open.spotify.com/track/" in str(url):
-					SearchResultURLSplit = str(url).split('/')
-					uri = SearchResultURLSplit[2][:-1]
-					uri = uri[:22]
-					songList[i].uri = uri
-					check = 0
-					break
-			for url in SearchResultURLS:
-				if check == 0:
-					break
-				elif "open.spotify.com/album/" in str(url):
-					SearchResultURLSplit = str(url).split('/')
-					uri = SearchResultURLSplit[2][:-1]
-					uri = uri[:22]
-					AlbumInfo = sp.album(uri)
-					AlbumType = AlbumInfo['album_type']
-					if (AlbumType == 'single'):
-						uri = AlbumInfo['tracks']['items'][0]['external_urls']['spotify'][-22:]
-						songList[i].uri = uri
-						break
-				else:
-					songList[i].uri = 'N'
-	except Exception as e:
-		print(e)
-					
+	global sp, songList, DelaySpotifySearch
+	for i in range(0, len(songList)):
+		time.sleep(DelaySpotifySearch)
+		ArtistNameWithoutFt = songList[i].artistname.split('Featuring', 1)[0]
+		ArtistNameWithoutFt = ArtistNameWithoutFt.split('&', 1)[0]
+		ArtistNameWithoutFt = ArtistNameWithoutFt.split(' X ', 1)[0]
+		ArtistNameWithoutFt = ArtistNameWithoutFt.split(' x ', 1)[0]
+		ArtistNameWithoutFt = ArtistNameWithoutFt.replace("'", '')
+		SearchString = str(songList[i].songtitle) + ' ' + ArtistNameWithoutFt
+		SearchResult = sp.search(SearchString, limit = 1, type = 'track')
+		if (SearchResult['tracks']['total'] > 0):
+			songList[i].uri = SearchResult['tracks']['items'][0]['uri']
+		else:
+			songList[i].uri = 'N'		
 
 def get_spotify_details():
-	global songList, sp
+	global songList, sp, DelaySpotifySearch
 	for i in range(0, len(songList)):
+		time.sleep(DelaySpotifySearch)
 		if (songList[i].uri != 'N'):
 			try:
 				AudioFeatures_Array = sp.audio_features(songList[i].uri)
@@ -248,4 +223,5 @@ def main():
 	update_sql()
 
 
-if __name__ == "__main__": main()
+if __name__ == "__main__": 
+	main()
