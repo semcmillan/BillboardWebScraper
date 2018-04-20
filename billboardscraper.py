@@ -20,7 +20,7 @@ songList = []
 sp = ''
 db = ''
 cursor = ''
-DelaySpotifySearch = 0.1
+DelaySpotifySearch = 0.3
 
 # Class which is used to track song information, can additionally be used to print information about
 #  the class
@@ -88,7 +88,7 @@ def scrape_billboard(date):
 def loop_back_through_data(NumWeeks):
 	global songList
 	for i in range(0, NumWeeks):
-		d = datetime.date(2018, 3, 24) - timedelta(days=7*i)
+		d = datetime.date(2016, 11, 5) - timedelta(days=7*i) #y, m, d
 		scrape_billboard(d)
 		time.sleep(5) #Add sleep here
 
@@ -102,6 +102,7 @@ def get_song_URI():
 		ArtistNameWithoutFt = ArtistNameWithoutFt.split(' X ', 1)[0]
 		ArtistNameWithoutFt = ArtistNameWithoutFt.split(' x ', 1)[0]
 		ArtistNameWithoutFt = ArtistNameWithoutFt.replace("'", '')
+		ArtistNameWithoutFt = ArtistNameWithoutFt.replace("*", '')
 		SearchString = str(songList[i].songtitle) + ' ' + ArtistNameWithoutFt
 		SearchResult = sp.search(SearchString, limit = 1, type = 'track')
 		if (SearchResult['tracks']['total'] > 0):
@@ -114,26 +115,26 @@ def get_spotify_details():
 	for i in range(0, len(songList)):
 		time.sleep(DelaySpotifySearch)
 		if (songList[i].uri != 'N'):
-			try:
-				AudioFeatures_Array = sp.audio_features(songList[i].uri)
-				AudioFeatures = AudioFeatures_Array[0]
-				songList[i].audiofeatures = AudioFeatures
-				songList[i].danceability = AudioFeatures['danceability']
-				songList[i].energy = AudioFeatures['energy']
-				songList[i].key = AudioFeatures['key']
-				songList[i].loudness = AudioFeatures['loudness']
-				songList[i].mode = AudioFeatures['mode']
-				songList[i].speechiness = AudioFeatures['speechiness']
-				songList[i].acousticness = AudioFeatures['acousticness']
-				songList[i].liveness = AudioFeatures['liveness']
-				songList[i].valence = AudioFeatures['valence']
-				songList[i].tempo = AudioFeatures['tempo']
-				songList[i].duration = AudioFeatures['duration_ms']
-				songList[i].time_signature = AudioFeatures['time_signature']
-				songList[i].analysis_url = AudioFeatures['analysis_url']
-			except: 
-				print("An error in saving audio features occured with " + str(songList[i].songtitle))
-				pass
+			#try:
+			AudioFeatures_Array = sp.audio_features(songList[i].uri)
+			AudioFeatures = AudioFeatures_Array[0]
+			songList[i].audiofeatures = AudioFeatures
+			songList[i].danceability = AudioFeatures['danceability']
+			songList[i].energy = AudioFeatures['energy']
+			songList[i].key = AudioFeatures['key']
+			songList[i].loudness = AudioFeatures['loudness']
+			songList[i].mode = AudioFeatures['mode']
+			songList[i].speechiness = AudioFeatures['speechiness']
+			songList[i].acousticness = AudioFeatures['acousticness']
+			songList[i].liveness = AudioFeatures['liveness']
+			songList[i].valence = AudioFeatures['valence']
+			songList[i].tempo = AudioFeatures['tempo']
+			songList[i].duration = AudioFeatures['duration_ms']
+			songList[i].time_signature = AudioFeatures['time_signature']
+			songList[i].analysis_url = AudioFeatures['analysis_url']
+			#except: 
+			#	print("An error in saving audio features occured with " + str(songList[i].songtitle))
+			#	pass
 		else:
 			songList[i].audiofeatures = 'N'
 			songList[i].danceability = 'N'
@@ -174,7 +175,7 @@ def update_sql():
 		SongNameString = SongNameString[:64]
 		ArtistNameString = songList[i].artistname.replace("'", "")
 		ArtistNameString = ArtistNameString[:64]
-		sql = ("INSERT INTO songs(key_val, song_name, artist_name, date_val, year_val, month_val, day_val, rank, URI)" 
+		sql = ("INSERT INTO songs(primary_key, song_name, artist_name, date_val, year_val, month_val, day_val, rank, URI)" 
 			"VALUES('%s', '%s', '%s', '%s' , '%s', '%s', '%s', '%s', '%s' )" % (songList[i].primary_key, SongNameString, ArtistNameString, \
 				songList[i].date, songList[i].year, songList[i].month, songList[i].day, songList[i].rank, songList[i].uri))
 		cursor.execute(sql)
@@ -195,7 +196,7 @@ def update_sql():
 def clear_sql_table():
 	global db, cursor, songList
 	for i in range(0, len(songList)):
-		sql = "DELETE FROM `test`.`songs` WHERE `key_val`=%s;" % (songList[i].primary_key)
+		sql = "DELETE FROM `test`.`songs` WHERE `primary_key`=%s;" % (songList[i].primary_key)
 		cursor.execute(sql)
 		db.commit()
 	for i in range(0, len(songList)):
