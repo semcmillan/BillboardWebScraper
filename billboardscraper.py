@@ -21,6 +21,10 @@ sp = ''
 db = ''
 cursor = ''
 DelaySpotifySearch = 0.3
+startDate = datetime.date(2015, 3, 4) #y, m, d
+numLoops = 1
+maxIndex = 101
+cycleSleep = 70
 
 # Class which is used to track song information, can additionally be used to print information about
 #  the class
@@ -62,7 +66,7 @@ class SongIndex:
 # Webscrapes from the billboard hot 100 list, to get the specific list for a year, date, and month
 #  Takes a date in the datetime format, which it adds to a URL string to get the request URL
 def scrape_billboard(date):
-	global songList
+	global songList, maxIndex
 	date = str(date)
 	year = int(date[:4])
 	month = int(date[5:7])
@@ -70,7 +74,7 @@ def scrape_billboard(date):
 	pageURL = 'https://www.billboard.com/charts/hot-100/' + date
 	pageContent = requests.get(pageURL)
 	tree = html.fromstring(pageContent.content)
-	for i in range(1, 101):
+	for i in range(1, maxIndex):
 		selectorPath = '#main > div:nth-child(2) > div > div > article.chart-row.chart-row--' + str(i) + '.js-chart-row > div.chart-row__primary > div.chart-row__main-display > div.chart-row__container > div'
 		sel = CSSSelector(selectorPath)
 		result = sel(tree)
@@ -85,10 +89,10 @@ def scrape_billboard(date):
 
 # This function calls the scrape_billboard() function in a loop, with decreasing weeks. Essentially, this will allow you to change 
 #  how many weeks of data you are collecting. The NumWeeks value is an integer which allows you specify that number of weeks
-def loop_back_through_data(NumWeeks):
+def loop_back_through_data(NumWeeks, startDate):
 	global songList
 	for i in range(0, NumWeeks):
-		d = datetime.date(2016, 11, 5) - timedelta(days=7*i) #y, m, d
+		d = startDate - timedelta(days=7*i) #y, m, d
 		scrape_billboard(d)
 		time.sleep(5) #Add sleep here
 
@@ -205,10 +209,11 @@ def clear_sql_table():
 		db.commit()
 
 
-def main():
-	global songList
+def capture_data(d):
+	global songList, numLoops, startDate
 	initialize_spotify()
-	loop_back_through_data(1)
+	#loop_back_through_data(numLoops, startDate)
+	scrape_billboard(d)
 	get_song_URI()
 	for i in range(0, len(songList)):
 		songList[i].print_name()
@@ -222,6 +227,15 @@ def main():
 	initialize_mysql()
 	clear_sql_table()
 	update_sql()
+
+def main():
+	global songList, numLoops, startDate, cycleSleep
+	for i in range(0, numLoops):
+		d = startDate - timedelta(days=7*i) #y, m, d
+		capture_data(d)
+		if (i != (numLoops-1)):
+			time.sleep(cycleSleep) #Add sleep here
+		songList = []
 
 
 if __name__ == "__main__": 
